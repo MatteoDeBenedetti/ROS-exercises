@@ -32,6 +32,7 @@ exercise_2::CustomControl g_custom_control_msg;
 struct POSE g_robot_pose;
 bool g_received_command;
 
+
 //------------------------------------------------------------------------------
 // MAIN FUNCTION
 int main(int argc, char** argv)
@@ -121,7 +122,6 @@ int main(int argc, char** argv)
     ros::spinOnce();
     loop_rate.sleep();
   }
-
 
 
   return 0;
