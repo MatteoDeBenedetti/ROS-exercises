@@ -1,0 +1,7 @@
+<launch>
+  <!--- Launch turtlesim node -->
+  <node name="TurtlesNode" pkg="turtlesim" type="turtlesim_node"/>
+
+  <!--- Launch 3 turtle controllers -->
+  <node name="random_controller" pkg="exercise_3" type="random_controller" output="screen"/>
+</launch>
