@@ -100,8 +100,7 @@ int main(int argc, char** argv)
   sleep(1); // wait for adv-sub
 
   ROS_INFO("Ready to receive command");
-  ROS_INFO("Type: rostopic pub /controller/custom_control /exercise_2/CustomControl\n");
-  ROS_INFO("      \"lin_vel_ref: <value>\n      ang_vel_ref: <value>\" \n");
+  ROS_INFO("Type the custom control as explained in the README\n");
 
 
   // control turtle loop
@@ -135,6 +134,8 @@ void customControlCallback(const exercise_2::CustomControl::ConstPtr& t_custom_c
 {
   g_custom_control_msg.lin_vel_ref = t_custom_control_msg->lin_vel_ref;
   g_custom_control_msg.ang_vel_ref = t_custom_control_msg->ang_vel_ref;
+
+  g_received_command = true;
 }
 
 void poseCallback(const turtlesim::Pose::ConstPtr& t_pose_msg)
@@ -152,7 +153,7 @@ float applySaturation(float t_input, float t_sat_max, float t_sat_min)
   {
     return t_sat_max;
   }
-  else if (t_input < t_sat_max)
+  else if (t_input < t_sat_min)
   {
     return t_sat_min;
   }
