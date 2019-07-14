@@ -92,7 +92,7 @@ float createRandomNumber(int t_seed, int min, int max)
 {
   float rand_number;
   //rand_number = rand() % ((max+abs(min)+1)*10 + min*10)/10;
-  rand_number = (rand() % (5*10 + 1))/5 - 5;
+  rand_number = (rand() % (5*10 + 1))/5.0 - 5.0;
   ROS_INFO("rand number generated: %f\n", rand_number);
   return rand_number;
 }
