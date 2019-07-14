@@ -1,0 +1,13 @@
+<launch>
+  <!--- Launch turtlesim node -->
+  <node name="TurtlesNode" pkg="turtlesim" type="turtlesim_node"/>
+
+  <!--- Launch turtle controller -->
+  <node name="controller" pkg="exercise_2"
+    type="controller" output="screen">
+    <param name="lin_vel_sat_min" value="$(arg lin_vel_sat_min)"/>
+    <param name="lin_vel_sat_max" value="$(arg lin_vel_sat_max)"/>
+    <param name="ang_vel_sat_min" value="$(arg ang_vel_sat_min)"/>
+    <param name="ang_vel_sat_max" value="$(arg ang_vel_sat_max)"/>
+  </node>
+</launch>
