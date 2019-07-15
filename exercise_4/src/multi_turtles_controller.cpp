@@ -36,6 +36,7 @@ void waitForPreviousArrived();
 void moveToTarget(float t_target_x, float t_target_y);
 float getDistance(STATE t_robot_state, float t_target_x, float t_target_y);
 float getOrientation(STATE t_robot_state, float t_target_x, float t_target_y);
+float getOrientationError(STATE t_robot_state, float t_target_x, float t_target_y);
 
 
 //------------------------------------------------------------------------------
@@ -304,7 +305,7 @@ void moveToTarget(float t_target_x, float t_target_y)
   ros::Rate loopRate(10);
 	do
 	{
-		orientation = getOrientation(g_robots_states[g_robot_ID], t_target_x, t_target_y);
+		orientation = getOrientationError(g_robots_states[g_robot_ID], t_target_x, t_target_y);
 
 		// apply velocity
 		cmd_msg.linear.x = 0.1;
@@ -322,7 +323,7 @@ void moveToTarget(float t_target_x, float t_target_y)
   do
 	{
 		distance = getDistance(g_robots_states[g_robot_ID], t_target_x, t_target_y);
-    orientation = getOrientation(g_robots_states[g_robot_ID], t_target_x, t_target_y);
+    orientation = getOrientationError(g_robots_states[g_robot_ID], t_target_x, t_target_y);
 
 		// apply velocity
 		cmd_msg.linear.x = Kp_lin*distance;
@@ -358,4 +359,27 @@ float getOrientation(STATE t_robot_state, float t_target_x, float t_target_y)
 float getDistance(STATE t_robot_state, float t_target_x, float t_target_y)
 {
   return sqrt( pow((t_robot_state.x - t_target_x),2) + pow((t_robot_state.y - t_target_y),2) );
+}
+
+float getOrientationError(STATE t_robot_state, float t_target_x, float t_target_y)
+{
+  float target_hdg = atan2(t_target_y - t_robot_state.y,  t_target_x - t_robot_state.x);
+  target_hdg = fmod(2*M_PI + fmod(target_hdg, 2*M_PI), 2*M_PI);
+  float turtle_theta = t_robot_state.theta;
+
+  float err = target_hdg-turtle_theta;
+  if (err < M_PI && err > -M_PI)
+	{
+		err = target_hdg - turtle_theta;
+	}
+	else if (err > M_PI)
+	{
+		err -= 2*M_PI;
+	}
+	else if (err <= -M_PI)
+	{
+		err += 2*M_PI;
+	}
+
+  return err;
 }
