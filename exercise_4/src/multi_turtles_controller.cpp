@@ -26,16 +26,12 @@ struct STATE
 // FUNCTIONS PROTOTYPES
 void poseCallback(const turtlesim::Pose::ConstPtr& t_pose_msg);
 void customMessageCallback(const exercise_4::CustomMessage::ConstPtr& t_custom_message);
-void publishID();
-void publishPosition(float t_x, float t_y);
-void publishFlags(bool t_sent_position, bool t_is_arrived);
 void publishCustomMessage(bool t_sent_position, bool t_is_arrived, float t_x, float t_y);
 void waitForPositionsSent();
 void computeBarycenter(float* barycenter);
 void waitForPreviousArrived();
 void moveToTarget(float t_target_x, float t_target_y);
 float getDistance(STATE t_robot_state, float t_target_x, float t_target_y);
-float getOrientation(STATE t_robot_state, float t_target_x, float t_target_y);
 float getOrientationError(STATE t_robot_state, float t_target_x, float t_target_y);
 
 
@@ -50,6 +46,7 @@ int g_robots_number = 4;
 ros::Publisher g_vel_pub;
 ros::Publisher g_team_topic_pub;
 
+
 //------------------------------------------------------------------------------
 // MAIN FUNCTION
 int main(int argc, char** argv)
@@ -59,6 +56,7 @@ int main(int argc, char** argv)
 
   // variables declarations
   float barycenter[2];
+
   // variables initialization
 
   // get parameters
@@ -87,10 +85,8 @@ int main(int argc, char** argv)
 	sleep(1);
 
   // send ID position and update position flag
-  publishCustomMessage(false, false, 0.0, 0.0);//publishID();
-  ROS_INFO("%d: before sending y=%.3f", g_robot_ID, g_robots_states[g_robot_ID].x);
-  publishCustomMessage(true, false, g_robots_states[g_robot_ID].x, g_robots_states[g_robot_ID].y);//publishPosition(g_robots_states[g_robot_ID].x, g_robots_states[g_robot_ID].y);
-  //publishFlags(true, false);
+  publishCustomMessage(false, false, 0.0, 0.0);
+  publishCustomMessage(true, false, g_robots_states[g_robot_ID].x, g_robots_states[g_robot_ID].y);
 
   // wait for all to send their position
   waitForPositionsSent();
@@ -102,18 +98,10 @@ int main(int argc, char** argv)
   waitForPreviousArrived();
 
   // go to barycenter
-  //ROS_INFO("%d: before moving x=%.3f", g_robot_ID, g_robots_states[g_robot_ID].x);
   moveToTarget(barycenter[0], barycenter[1]);
 
   // update is arrived flag
   publishCustomMessage(true, true, g_robots_states[g_robot_ID].x, g_robots_states[g_robot_ID].y);
-
-
-  ros::Rate rate(100);
-  while(ros::ok())
-  {
-    rate.sleep();
-  }
 
   return 0;
 }
@@ -128,8 +116,6 @@ void poseCallback(const turtlesim::Pose::ConstPtr& t_pose_msg)
   g_robots_states[g_robot_ID].theta = fmod(2*M_PI + fmod(t_pose_msg->theta, 2*M_PI), 2*M_PI);
   g_robots_states[g_robot_ID].linear_velocity = t_pose_msg->linear_velocity;
   g_robots_states[g_robot_ID].angular_velocity = t_pose_msg->angular_velocity;
-
-  //ROS_INFO("%d: x=%.3f", g_robot_ID, g_robots_states[g_robot_ID].x);
 }
 
 void customMessageCallback(const exercise_4::CustomMessage::ConstPtr& t_custom_message)
@@ -141,8 +127,6 @@ void customMessageCallback(const exercise_4::CustomMessage::ConstPtr& t_custom_m
   g_robots_states[msg_ID].x = t_custom_message->x;
   g_robots_states[msg_ID].y = t_custom_message->y;
 
-  //ROS_INFO("%d: inside customMessageCallback: x=%.3f from %d", g_robot_ID, g_robots_states[msg_ID].x, msg_ID);
-
   // check if all robots sent position
   if (!g_all_positions_sent)
   {
@@ -153,7 +137,6 @@ void customMessageCallback(const exercise_4::CustomMessage::ConstPtr& t_custom_m
       {
         ready_count++;
       }
-      //ROS_INFO("%d: ready count = %d", g_robot_ID, ready_count);
     }
 
     if(ready_count == g_robots_number)
@@ -182,40 +165,6 @@ void customMessageCallback(const exercise_4::CustomMessage::ConstPtr& t_custom_m
     }
   }
 
-}
-
-void publishID()
-{
-  exercise_4::CustomMessage custom_message;
-
-  custom_message.header.stamp = ros::Time::now();
-  custom_message.robot_ID = g_robot_ID;
-
-  g_team_topic_pub.publish(custom_message);
-}
-
-void publishPosition(float t_x, float t_y)
-{
-  exercise_4::CustomMessage custom_message;
-
-  custom_message.header.stamp = ros::Time::now();
-  custom_message.robot_ID = g_robot_ID;
-  custom_message.x = t_x;
-  custom_message.y = t_y;
-
-  g_team_topic_pub.publish(custom_message);
-}
-
-void publishFlags(bool t_sent_position, bool t_is_arrived)
-{
-  exercise_4::CustomMessage custom_message;
-
-  custom_message.header.stamp = ros::Time::now();
-  custom_message.robot_ID = g_robot_ID;
-  custom_message.sent_position = t_sent_position;
-  custom_message.is_arrived = t_is_arrived;
-
-  g_team_topic_pub.publish(custom_message);
 }
 
 void publishCustomMessage(bool t_sent_position, bool t_is_arrived, float t_x, float t_y)
@@ -252,8 +201,6 @@ void computeBarycenter(float* barycenter)
   {
     bar_x += g_robots_states[i].x;
     bar_y += g_robots_states[i].y;
-    ROS_INFO("%d: barycenter computation x: %.2f += %.2f", g_robot_ID, bar_x, g_robots_states[i].x);
-    ROS_INFO("%d: barycenter computation y: %.2f += %.2f", g_robot_ID, bar_y, g_robots_states[i].y);
   }
   barycenter[0] = bar_x/g_robots_number;
   barycenter[1] = bar_y/g_robots_number;
@@ -314,8 +261,6 @@ void moveToTarget(float t_target_x, float t_target_y)
 		// publish command
 		g_vel_pub.publish(cmd_msg);
 
-    //ROS_INFO("%d: theta=%.2f, orient_ref=%.2f", g_robot_ID, g_robots_states[g_robot_ID].theta, orientation);
-
 	  ros::spinOnce();
 		loopRate.sleep();
 	} while(abs(orientation) > tol);
@@ -332,8 +277,6 @@ void moveToTarget(float t_target_x, float t_target_y)
 		// publish command
 		g_vel_pub.publish(cmd_msg);
 
-    //ROS_INFO("%d: x,y=%.2f,%.2f, dist=%.2f", g_robot_ID, g_robots_states[g_robot_ID].x, g_robots_states[g_robot_ID].y, distance);
-
 		ros::spinOnce();
 		loopRate.sleep();
 	} while(distance > tol);
@@ -346,16 +289,6 @@ void moveToTarget(float t_target_x, float t_target_y)
 	ROS_INFO("%d: Goal reached!", g_robot_ID);
 }
 
-float getOrientation(STATE t_robot_state, float t_target_x, float t_target_y)
-{
-  float orientation = atan2(t_target_y - t_robot_state.y,  t_target_x - t_robot_state.x);
-  // while(orientation > 2*M_PI) orientation -= 2*M_PI;
-	// while(orientation < -2*M_PI) orientation += 2*M_PI;
-
-  orientation -= t_robot_state.theta;
-  return fmod(2*M_PI + fmod(orientation, 2*M_PI), 2*M_PI);
-}
-
 float getDistance(STATE t_robot_state, float t_target_x, float t_target_y)
 {
   return sqrt( pow((t_robot_state.x - t_target_x),2) + pow((t_robot_state.y - t_target_y),2) );
@@ -363,9 +296,10 @@ float getDistance(STATE t_robot_state, float t_target_x, float t_target_y)
 
 float getOrientationError(STATE t_robot_state, float t_target_x, float t_target_y)
 {
+  float turtle_theta = t_robot_state.theta;
+
   float target_hdg = atan2(t_target_y - t_robot_state.y,  t_target_x - t_robot_state.x);
   target_hdg = fmod(2*M_PI + fmod(target_hdg, 2*M_PI), 2*M_PI);
-  float turtle_theta = t_robot_state.theta;
 
   float err = target_hdg-turtle_theta;
   if (err < M_PI && err > -M_PI)
