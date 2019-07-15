@@ -1,6 +1,6 @@
 Header header
-string robot_ID
+int8 robot_ID
 bool sent_position
 bool is_arrived
-float32 position_x
-float32 position_y
+float32 x
+float32 y
