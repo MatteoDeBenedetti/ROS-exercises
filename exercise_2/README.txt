@@ -7,4 +7,8 @@ roslaunch exercise_2 exercise_2.launch lin_vel_sat_min:=-3 lin_vel_sat_max:=3 an
 
 To send custom commands typein another terminal:
 rostopic pub -r <value> /custom_control exercise_2/CustomControl "{lin_vel_ref: <value>, ang_vel_ref: <value>}"
-(eg: rostopic pub -r 10 /custom_control exercise_2/CustomControl "{lin_vel_ref: 4.0, ang_vel_ref: 2.0}")
+eg: rostopic pub -r 10 /custom_control exercise_2/CustomControl "{lin_vel_ref: 4.0, ang_vel_ref: 2.0}"
+
+Visualization:
+rqt_plot /turtle1/cmd_vel/linear/x /turtle1/cmd_vel/angular/z /custom_control
+
