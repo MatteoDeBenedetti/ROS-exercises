@@ -122,10 +122,11 @@ void avoidObstacle()
   float Kp_theta = 1;
 
   // reorient turtle upwards
+  ROS_INFO("correcting theta");
   ros::Rate loop_rate2(100);
   while (fabs(g_robot_pose.theta - M_PI/2.0) > 0.1)
   {
-    ROS_INFO("correcting theta: err=%.2f", fabs(g_robot_pose.theta - M_PI/2.0));
+    //ROS_INFO("correcting theta: err=%.2f", fabs(g_robot_pose.theta - M_PI/2.0));
     cmd_msg.angular.z = Kp_theta*(M_PI/2 - g_robot_pose.theta);
     g_vel_pub.publish(cmd_msg);
 
