@@ -238,7 +238,7 @@ void moveToTarget(float t_target_x, float t_target_y)
 {
   ROS_INFO("%d: moving to barycenter = %.2f,%.2f", g_robot_ID, t_target_x, t_target_y);
 
-  float Kp_lin = .3, Kp_ang = .5, tol = 0.01;
+  float Kp_lin = .5, Kp_ang = 1, tol = 0.01;
   float distance, orientation;
 
   geometry_msgs::Twist cmd_msg;
@@ -250,13 +250,11 @@ void moveToTarget(float t_target_x, float t_target_y)
 	cmd_msg.angular.z = 0;
 
   ros::Rate loopRate(10);
-
-	while(fabs(orientation) > tol)
+	do
 	{
 		orientation = getOrientationError(g_robots_states[g_robot_ID], t_target_x, t_target_y);
 
 		// apply velocity
-		cmd_msg.linear.x = 0.1;
 		cmd_msg.angular.z = Kp_ang*orientation;
 
 		// publish command
@@ -264,9 +262,9 @@ void moveToTarget(float t_target_x, float t_target_y)
 
 	  ros::spinOnce();
 		loopRate.sleep();
-	}
+	} while(fabs(orientation) > tol);
 
-  while(distance > tol)
+  do
 	{
 		distance = getDistance(g_robots_states[g_robot_ID], t_target_x, t_target_y);
     orientation = getOrientationError(g_robots_states[g_robot_ID], t_target_x, t_target_y);
@@ -280,7 +278,7 @@ void moveToTarget(float t_target_x, float t_target_y)
 
 		ros::spinOnce();
 		loopRate.sleep();
-	}
+	} while(distance > tol);
 
 	// stop turtle
 	cmd_msg.linear.x = 0;
