@@ -1,0 +1,30 @@
+<launch>
+  <!--- Launch turtlesim node -->
+  <node name="TurtlesNode" pkg="turtlesim" type="turtlesim_node"/>
+
+  <!--- Add 2 obstacle-turtles -->
+  <node name="SpawnTurtle2" pkg="rosservice" type="rosservice" args='call --wait /spawn "{x: 5.544444561, y: 4.0, theta: 0.0, name: turtle2}"' />
+  <node name="SpawnTurtle3" pkg="rosservice" type="rosservice" args='call --wait /spawn "{x: 4.0, y: 1.0, theta: 0.0, name: turtle3}"' />
+
+  <!--- Launch 1 turtle controller -->
+  <node name="turtle_controller_1" pkg="exercise_5" type="turtle_controller_obs" output="screen">
+    <param name="robotName" value="turtle1"/>
+    <param name="goalX" value="1"/>
+    <param name="goalY" value="1"/>
+    <param name="Ka" value="1"/>
+  </node>
+
+  <!--- Launch 2 obstacle-turtle controllers -->
+  <node name="obstacle_controller_0" pkg="exercise_5" type="obstacle_controller" output="screen">
+    <param name="robotName" value="turtle2"/>
+    <param name="Kr" value="1"/>
+    <param name="gamma" value="2"/>
+    <param name="influence" value="2"/>
+  </node>
+  <node name="obstacle_controller_1" pkg="exercise_5" type="obstacle_controller" output="screen">
+    <param name="robotName" value="turtle3"/>
+    <param name="Kr" value="1"/>
+    <param name="gamma" value="2"/>
+    <param name="influence" value="2"/>
+  </node>
+</launch>

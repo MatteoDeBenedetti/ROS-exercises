@@ -4,6 +4,7 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include "turtlesim/Pose.h"
+#include "exercise_5/ObstacleMessage.h"
 
 
 //------------------------------------------------------------------------------
@@ -42,21 +43,23 @@ VECTOR2D getRepulsiveForce(OBSTACLE t_obstacle, POSE t_robot_pose);
 float getDistance(VECTOR2D t_vector1, VECTOR2D t_vector2);
 VECTOR2D getDistanceVector(VECTOR2D t_vector1, VECTOR2D t_vector2);
 VECTOR2D getNormalizedVector(VECTOR2D t_vector);
+void obstacleMessageCallback(const exercise_5::ObstacleMessage::ConstPtr& t_obstacle_msg);
 
 
 //------------------------------------------------------------------------------
 // GLOBAL VARS
 POSE g_robot_pose;
-const int g_obstacles_number = 3;
-OBSTACLE g_obstacles[g_obstacles_number];
+const int g_obstacles_number = 2;
+OBSTACLE g_obstacles_pose[g_obstacles_number];
 GOAL g_goal;
+std::string g_robot_name;
 
 
 //------------------------------------------------------------------------------
 // MAIN FUNCTION
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "controller");
+  ros::init(argc, argv, "turtle_controller_obs");
   ros::NodeHandle nh("~");
 
   // variables declarations
@@ -73,23 +76,68 @@ int main(int argc, char** argv)
 	cmd_msg.angular.z = 0;
 
   // get parameters
+  if (nh.getParam("robotName", g_robot_name))
+  {
+    ROS_INFO("Param found: setting name as: %s", g_robot_name.c_str());
+  }
+  else
+  {
+    ROS_INFO("Please pass the name in the launch file: <param name=\"robotName\" value=\"turtle2\"/>");
+    return 0;
+  }
+
+  if (nh.getParam("goalX", g_goal.vector.x))
+  {
+    ROS_INFO("Param found: setting goalX as: %.2f", g_goal.vector.x);
+  }
+  else
+  {
+    ROS_INFO("Please pass the goalX in the launch file: <param name=\"goalX\" value=\"1\"/>");
+    return 0;
+  }
+
+  if (nh.getParam("goalY", g_goal.vector.y))
+  {
+    ROS_INFO("Param found: setting goalY as: %.2f", g_goal.vector.y);
+  }
+  else
+  {
+    ROS_INFO("Please pass the goalY in the launch file: <param name=\"goalY\" value=\"1\"/>");
+    return 0;
+  }
+
+  if (nh.getParam("Ka", g_goal.Ka))
+  {
+    ROS_INFO("Param found: setting Ka as: %.2f", g_goal.Ka);
+  }
+  else
+  {
+    ROS_INFO("Please pass the Ka in the launch file: <param name=\"Ka\" value=\"1\"/>");
+    return 0;
+  }
 
   // subscribe and advertise to topics
-  ros::Subscriber robot_pose_sub = nh.subscribe("/turtle1/pose", 20, &poseCallback);
-  ros::Publisher vel_pub = nh.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10);
-  sleep(1); // wait for adv-sub
+  ros::Subscriber obstacle_topic_sub = nh.subscribe("/obstacle_topic", 20, &obstacleMessageCallback);
+  ros::Subscriber robot_pose_sub = nh.subscribe("/" + g_robot_name + "/pose", 20, &poseCallback);
+  ros::Publisher vel_pub = nh.advertise<geometry_msgs::Twist>("/" + g_robot_name + "/cmd_vel", 10);
+  sleep(3); // wait for adv-sub
+  ros::spinOnce(); // call obstacle callbacks
 
   // control loop
-  ros::Rate loop_rate(100);
+  ros::Rate loop_rate(5);
   while(ros::ok())
   {
+    ROS_INFO("obs0: x,y=%.2f,%.2f", g_obstacles_pose[0].vector.x, g_obstacles_pose[0].vector.y);
+    ROS_INFO("obs1: x,y=%.2f,%.2f", g_obstacles_pose[1].vector.x, g_obstacles_pose[1].vector.y);
+
     // sum of repulsive forces
     repulsive_force_total.x = 0;
     repulsive_force_total.y = 0;
     for (int i = 0; i < g_obstacles_number; i++)
     {
-      repulsive_force_total.x += getRepulsiveForce(g_obstacles[i], g_robot_pose).x;
-      repulsive_force_total.y += getRepulsiveForce(g_obstacles[i], g_robot_pose).y;
+      VECTOR2D repulsive_force = getRepulsiveForce(g_obstacles_pose[i], g_robot_pose);
+      repulsive_force_total.x += repulsive_force.x;
+      repulsive_force_total.y += repulsive_force.y;
     }
 
     // attractive force
@@ -107,13 +155,14 @@ int main(int argc, char** argv)
       + attractive_force.y*cos(g_robot_pose.theta)
       + repulsive_force_total.y*cos(g_robot_pose.theta);
 
+    ROS_INFO("control vel = %f,%f", cmd_msg.linear.x, cmd_msg.linear.y);
+
     // send command
     vel_pub.publish(cmd_msg);
 
     ros::spinOnce();
     loop_rate.sleep();
   }
-
 
 
   return 0;
@@ -136,10 +185,13 @@ VECTOR2D getAttractiveForce(GOAL t_goal, POSE t_robot_pose)
   VECTOR2D attractive_force;
 
   float distance = getDistance(t_robot_pose.vector, t_goal.vector);
+  ROS_INFO("attr: dist=%f", distance);
   VECTOR2D distance_vector = getDistanceVector(t_robot_pose.vector, t_goal.vector);
+  ROS_INFO("attr: dist_v=%f,%f", distance_vector.x, distance_vector.y);
   VECTOR2D distance_versor = getNormalizedVector(distance_vector);
+  ROS_INFO("attr: dist_vers=%f,%f", distance_versor.x, distance_versor.y);
 
-  if (distance > 1)
+  if (distance < 1)
   {
     attractive_force.x = t_goal.Ka*distance_vector.x;
     attractive_force.y = t_goal.Ka*distance_vector.y;
@@ -150,6 +202,9 @@ VECTOR2D getAttractiveForce(GOAL t_goal, POSE t_robot_pose)
     attractive_force.y = t_goal.Ka*distance_versor.y;
   }
 
+  ROS_INFO("attr: attr_force_v=%f,%f", attractive_force.x, attractive_force.y);
+
+  return attractive_force;
 }
 
 VECTOR2D getRepulsiveForce(OBSTACLE t_obstacle, POSE t_robot_pose)
@@ -160,11 +215,30 @@ VECTOR2D getRepulsiveForce(OBSTACLE t_obstacle, POSE t_robot_pose)
   float force_norm;
 
   distance = getDistance(t_obstacle.vector, t_robot_pose.vector);
-  force_norm = t_obstacle.Kr/pow(t_obstacle.gamma,2)*(1/distance - 1/t_obstacle.influence);
+  ROS_INFO("rep: dist=%f", distance);
+  force_norm = t_obstacle.Kr/(pow(distance,2))
+    //*(pow((1/distance - 1/t_obstacle.influence), (t_obstacle.gamma - 1)));
+    *(1/distance - 1/t_obstacle.influence);
+  ROS_INFO("rep: f_norm=%f", force_norm);
+  //ROS_INFO("rep: f_norm=%.3f", force_norm);
+  //ROS_INFO("rep: f_norm=%f", force_norm);
   distance_vector = getDistanceVector(t_obstacle.vector, t_robot_pose.vector);
+  ROS_INFO("rep: dist_v=%f,%f", distance_vector.x, distance_vector.y);
 
-  repulsive_force.x = force_norm*distance_vector.x;
-  repulsive_force.y = force_norm*distance_vector.y;
+  if (distance < t_obstacle.influence)
+  {
+    repulsive_force.x = force_norm*distance_vector.x;
+    repulsive_force.y = force_norm*distance_vector.y;
+  }
+  else
+  {
+    repulsive_force.x = 0.0;
+    repulsive_force.y = 0.0;
+  }
+
+  ROS_INFO("rep: rep_force_v f=%f,%f", repulsive_force.x, repulsive_force.y);
+
+  return repulsive_force;
 }
 
 float getDistance(VECTOR2D t_vector1, VECTOR2D t_vector2)
@@ -190,4 +264,15 @@ VECTOR2D getNormalizedVector(VECTOR2D t_vector)
   t_vector.y /= norm;
 
   return t_vector;
+}
+
+void obstacleMessageCallback(const exercise_5::ObstacleMessage::ConstPtr& t_obstacle_msg)
+{
+  int obs_ID = t_obstacle_msg->obstacle_ID;
+
+  g_obstacles_pose[obs_ID].vector.x = t_obstacle_msg->x;
+  g_obstacles_pose[obs_ID].vector.y = t_obstacle_msg->y;
+  g_obstacles_pose[obs_ID].Kr = t_obstacle_msg->Kr;
+  g_obstacles_pose[obs_ID].gamma = t_obstacle_msg->gamma;
+  g_obstacles_pose[obs_ID].influence = t_obstacle_msg->influence;
 }
