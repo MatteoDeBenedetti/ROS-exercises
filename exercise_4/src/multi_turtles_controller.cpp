@@ -250,7 +250,8 @@ void moveToTarget(float t_target_x, float t_target_y)
 	cmd_msg.angular.z = 0;
 
   ros::Rate loopRate(10);
-	do
+
+	while(fabs(orientation) > tol)
 	{
 		orientation = getOrientationError(g_robots_states[g_robot_ID], t_target_x, t_target_y);
 
@@ -263,9 +264,9 @@ void moveToTarget(float t_target_x, float t_target_y)
 
 	  ros::spinOnce();
 		loopRate.sleep();
-	} while(abs(orientation) > tol);
+	}
 
-  do
+  while(distance > tol)
 	{
 		distance = getDistance(g_robots_states[g_robot_ID], t_target_x, t_target_y);
     orientation = getOrientationError(g_robots_states[g_robot_ID], t_target_x, t_target_y);
@@ -279,7 +280,7 @@ void moveToTarget(float t_target_x, float t_target_y)
 
 		ros::spinOnce();
 		loopRate.sleep();
-	} while(distance > tol);
+	}
 
 	// stop turtle
 	cmd_msg.linear.x = 0;
