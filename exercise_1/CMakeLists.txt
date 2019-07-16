@@ -105,7 +105,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES exercise_1
-   CATKIN_DEPENDS roscpp std_msgs tf rviz
+  CATKIN_DEPENDS roscpp std_msgs tf rviz
 #  DEPENDS system_lib
 )
 

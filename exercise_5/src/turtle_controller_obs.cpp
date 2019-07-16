@@ -129,6 +129,7 @@ int main(int argc, char** argv)
   ros::spinOnce(); // call obstacle callbacks
 
   // control loop
+  ROS_INFO("Moving to the goal in %.2f,%.2f", g_goal.vector.x, g_goal.vector.y);
   ros::Rate loop_rate(50);
   float distance = getDistance(g_robot_pose.vector, g_goal.vector);
   float tol = 0.05;

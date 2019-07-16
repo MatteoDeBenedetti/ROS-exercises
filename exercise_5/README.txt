@@ -1,4 +1,4 @@
-EXERCISE 4:
+EXERCISE 5:
 Generare tre tartarughe. Controllare la prima dal punto iniziale ad un punto dato finale con un controllo a 50 hz evitando la collisione con le altre due (ferme).
 Testare l'algoritmo in varie configurazioni delle tarturghe "ostacolo".
 
